@@ -1,0 +1,480 @@
+Send Python-Dev mailing list submissions to
+	python-dev@python.org
+
+To subscribe or unsubscribe via the World Wide Web, visit
+	https://mail.python.org/mailman3/lists/python-dev.python.org/
+or, via email, send a message with subject or body 'help' to
+	python-dev-request@python.org
+
+You can reach the person managing the list at
+	python-dev-owner@python.org
+
+When replying, please edit your Subject line so it is more specific
+than "Re: Contents of Python-Dev digest..."
+
+Today's Topics:
+
+   1. Re: PEP 626: Precise line numbers for debugging and other tools.
+      (Guido van Rossum)
+   2. Add mimetypes.mimesniff (Dong-hee Na)
+   3. Re: How to customize CPython to a minimal set (Matthias Klose)
+
+
+----------------------------------------------------------------------
+
+Date: Wed, 22 Jul 2020 18:15:49 -0700
+From: Guido van Rossum <guido@python.org>
+Subject: [Python-Dev] Re: PEP 626: Precise line numbers for debugging
+	and other tools.
+To: "Gregory P. Smith" <greg@krypto.org>
+Cc: Python-Dev <python-dev@python.org>
+Message-ID:
+	<CAP7+vJKeKeQr3suo3YK7NoRgLtaOF2u0K=CVn+FQvXBmrsjycQ@mail.gmail.com>
+Content-Type: multipart/alternative;
+	boundary="00000000000075ecc005ab119986"
+
+--00000000000075ecc005ab119986
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+But on which line is the RETURN opcode if there is more than a docstring?
+Doesn=E2=80=99t it make sense to have it attached to the last line of the b=
+ody?
+(Too bad about pytype, that kind of change happens =E2=80=94 we had this ki=
+nd of
+thing for mypy too, when line numbers in the AST were fixed.)
+
+On Wed, Jul 22, 2020 at 17:29 Gregory P. Smith <greg@krypto.org> wrote:
+
+>
+>
+> On Wed, Jul 22, 2020 at 5:19 AM Mark Shannon <mark@hotpy.org> wrote:
+>
+>>
+>>
+>> On 21/07/2020 9:46 pm, Gregory P. Smith wrote:
+>> >
+>> >
+>> > On Fri, Jul 17, 2020 at 8:41 AM Ned Batchelder <ned@nedbatchelder.com
+>> > <mailto:ned@nedbatchelder.com>> wrote:
+>> >
+>> >     https://www.python.org/dev/peps/pep-0626/ :)
+>> >
+>> >     --Ned.
+>> >
+>> >     On 7/17/20 10:48 AM, Mark Shannon wrote:
+>> >      > Hi all,
+>> >      >
+>> >      > I'd like to announce a new PEP.
+>> >      >
+>> >      > It is mainly codifying that Python should do what you probably
+>> >     already
+>> >      > thought it did :)
+>> >      >
+>> >      > Should be uncontroversial, but all comments are welcome.
+>> >      >
+>> >      > Cheers,
+>> >      > Mark.
+>> >
+>> >
+>> > """When a frame object is created, the f_lineno will be set to the lin=
+e
+>> > at which the function or class is defined. For modules it will be set
+>> to
+>> > zero."""
+>> >
+>> > Within this PEP it'd be good for us to be very pedantic.  f_lineno is =
+a
+>> > single number.  So which number is it given many class and function
+>> > definition statements can span multiple lines.
+>> >
+>> > Is it the line containing the class or def keyword?  Or is it the line
+>> > containing the trailing :?
+>>
+>> The line of the `def`/`class`. It wouldn't change for the current
+>> behavior. I'll add that to the PEP.
+>>
+>> >
+>> > Q: Why can't we have the information about the entire span of lines
+>> > rather than consider a definition to be a "line"?
+>>
+>> Pretty much every profiler, coverage tool, and debugger ever expects
+>> lines to be natural numbers, not ranges of numbers.
+>> A lot of tooling would need to be changed.
+>>
+>> >
+>> > I think that question applies to later sections as well.  Anywhere we
+>> > refer to a "line", it could actually mean a span of lines. (especially
+>> > when you consider \ continuation in situations you might not otherwise
+>> > think could span lines)
+>>
+>> Let's take an example:
+>> ```
+>> x =3D (
+>>      a,
+>>      b,
+>> )
+>> ```
+>>
+>> You would want the BUILD_TUPLE instruction to have a of span lines 1 to
+>> 4 (inclusive), rather just line 1?
+>> If you wanted to break on the BUILD_TUPLE where you tell pdb to break?
+>>
+>> I don't see that it would add much value, but it would add a lot of
+>> complexity.
+>>
+>
+> We should have the data about the range at bytecode compilation time,
+> correct?  So why not keep it?  sure, most existing tooling would just use
+> the start of the range as the line number as it always has.  but some
+> tooling could find the range useful (ex: semantic code indexing for use i=
+n
+> display, search, editors, IDEs. Rendering lint errors more accurately
+> instead of just claiming a single line or resorting to parsing hacks to
+> come up with a range, etc.).  The downside is that we'd be storing a seco=
+nd
+> number in bytecode making it slightly larger.  Though it could be stored
+> efficiently as a prefixed delta so it'd likely average out as less than 2
+> bytes per line number stored.  (i don't have a feeling for our current
+> format to know if that is significant or not - if it is, maybe this idea
+> just gets nixed)
+>
+> The reason the range concept was on my mind is due to something not quite
+> related but involving a changed idea of a line number in our current syst=
+em
+> that we recently ran into with pytype during a Python upgrade.
+>
+> """in 3.7, if a function body is a plain docstring, the line number of th=
+e
+> RETURN_VALUE opcode corresponds to the docstring, whereas in 3.6 it
+> corresponds to the function definition.""" (Thanks, Martin & Rebecca!)
+>
+> ```python
+> def no_op():
+>   """docstring instead of pass."""
+> ```
+>
+> so the location of what *was* originally an end of line `# pytype:
+> disable=3Dbad-return-type` comment (to work around an issue not relevant
+> here) turned awkward and version dependent.  pytype is bytecode based, th=
+us
+> that is where its line numbers come from.  metadata comments in source ca=
+n
+> only be tied to bytecode via line numbers.  making end of line directives
+> occasionally hard to match up.
+>
+> When there is no return statement, this opcode still exists.  what line
+> number does it belong to?  3.6's answer made sense to me.  3.7's seems
+> wrong - a docstring isn't responsible for a return opcode.  I didn't chec=
+k
+> what 3.8 and 3.9 do.  An alternate answer after this PEP is that it
+> wouldn't have a line number when there is no return statement (pedantical=
+ly
+> correct, I approve! #win).
+>
+> -gps
+>
+>
+>>
+>> Cheers,
+>> Mark.
+>>
+>> >
+>> > -gps
+>>
+> _______________________________________________
+> Python-Dev mailing list -- python-dev@python.org
+> To unsubscribe send an email to python-dev-leave@python.org
+> https://mail.python.org/mailman3/lists/python-dev.python.org/
+> Message archived at
+> https://mail.python.org/archives/list/python-dev@python.org/message/H3YBK=
+275SUSCR5EHWHYBTJBF655UK7JG/
+> Code of Conduct: http://python.org/psf/codeofconduct/
+>
+--=20
+--Guido (mobile)
+
+--00000000000075ecc005ab119986
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<div><div><div dir=3D"auto">But on which line is the RETURN opcode if there=
+ is more than a docstring? Doesn=E2=80=99t it make sense to have it attache=
+d to the last line of the body? (Too bad about pytype, that kind of change =
+happens =E2=80=94 we had this kind of thing for mypy too, when line numbers=
+ in the AST were fixed.)</div></div></div><div><div><br><div class=3D"gmail=
+_quote"><div dir=3D"ltr" class=3D"gmail_attr">On Wed, Jul 22, 2020 at 17:29=
+ Gregory P. Smith &lt;<a href=3D"mailto:greg@krypto.org" target=3D"_blank">=
+greg@krypto.org</a>&gt; wrote:<br></div><blockquote class=3D"gmail_quote" s=
+tyle=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-left-style:so=
+lid;padding-left:1ex;border-left-color:rgb(204,204,204)"><div dir=3D"ltr"><=
+div dir=3D"ltr"><br></div><br><div class=3D"gmail_quote"></div></div><div d=
+ir=3D"ltr"><div class=3D"gmail_quote"><div dir=3D"ltr" class=3D"gmail_attr"=
+>On Wed, Jul 22, 2020 at 5:19 AM Mark Shannon &lt;<a href=3D"mailto:mark@ho=
+tpy.org" target=3D"_blank">mark@hotpy.org</a>&gt; wrote:<br></div><blockquo=
+te class=3D"gmail_quote" style=3D"margin:0px 0px 0px 0.8ex;border-left-widt=
+h:1px;border-left-style:solid;padding-left:1ex;border-left-color:rgb(204,20=
+4,204)"><br>
+<br>
+On 21/07/2020 9:46 pm, Gregory P. Smith wrote:<br>
+&gt; <br>
+&gt; <br>
+&gt; On Fri, Jul 17, 2020 at 8:41 AM Ned Batchelder &lt;<a href=3D"mailto:n=
+ed@nedbatchelder.com" target=3D"_blank">ned@nedbatchelder.com</a> <br>
+&gt; &lt;mailto:<a href=3D"mailto:ned@nedbatchelder.com" target=3D"_blank">=
+ned@nedbatchelder.com</a>&gt;&gt; wrote:<br>
+&gt; <br>
+&gt;=C2=A0 =C2=A0 =C2=A0<a href=3D"https://www.python.org/dev/peps/pep-0626=
+/" rel=3D"noreferrer" target=3D"_blank">https://www.python.org/dev/peps/pep=
+-0626/</a> :)<br>
+&gt; <br>
+&gt;=C2=A0 =C2=A0 =C2=A0--Ned.<br>
+&gt; <br>
+&gt;=C2=A0 =C2=A0 =C2=A0On 7/17/20 10:48 AM, Mark Shannon wrote:<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt; Hi all,<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt;<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt; I&#39;d like to announce a new PEP.<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt;<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt; It is mainly codifying that Python should do =
+what you probably<br>
+&gt;=C2=A0 =C2=A0 =C2=A0already<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt; thought it did :)<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt;<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt; Should be uncontroversial, but all comments a=
+re welcome.<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt;<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt; Cheers,<br>
+&gt;=C2=A0 =C2=A0 =C2=A0 &gt; Mark.<br>
+&gt; <br>
+&gt; <br>
+&gt; &quot;&quot;&quot;When a frame object is created, the f_lineno will be=
+ set to the line <br>
+&gt; at which the function or class is defined. For modules it will be set =
+to <br>
+&gt; zero.&quot;&quot;&quot;<br>
+&gt; <br>
+&gt; Within this PEP it&#39;d be good for us to be very pedantic.=C2=A0 f_l=
+ineno is a <br>
+&gt; single number.=C2=A0 So which number is it given many class and functi=
+on <br>
+&gt; definition statements can span multiple lines.<br>
+&gt; <br>
+&gt; Is it the line containing the class or def keyword?=C2=A0 Or is it the=
+ line <br>
+&gt; containing the trailing :?<br>
+<br>
+The line of the `def`/`class`. It wouldn&#39;t change for the current <br>
+behavior. I&#39;ll add that to the PEP.<br>
+<br>
+&gt; <br>
+&gt; Q: Why can&#39;t we have the information about the entire span of line=
+s <br>
+&gt; rather than consider a definition to be a &quot;line&quot;?<br>
+<br>
+Pretty much every profiler, coverage tool, and debugger ever expects <br>
+lines to be natural numbers, not ranges of numbers.<br>
+A lot of tooling would need to be changed.<br>
+<br>
+&gt; <br>
+&gt; I think that question applies to later sections as well.=C2=A0 Anywher=
+e we <br>
+&gt; refer to a &quot;line&quot;, it could actually mean a span of=C2=A0lin=
+es. (especially <br>
+&gt; when you consider \ continuation in situations you might not otherwise=
+ <br>
+&gt; think could span lines)<br>
+<br>
+Let&#39;s take an example:<br>
+```<br>
+x =3D (<br>
+=C2=A0 =C2=A0 =C2=A0a,<br>
+=C2=A0 =C2=A0 =C2=A0b,<br>
+)<br>
+```<br>
+<br>
+You would want the BUILD_TUPLE instruction to have a of span lines 1 to <br=
+>
+4 (inclusive), rather just line 1?<br>
+If you wanted to break on the BUILD_TUPLE where you tell pdb to break?<br>
+<br>
+I don&#39;t see that it would add much value, but it would add a lot of <br=
+>
+complexity.<br></blockquote><div><br></div></div></div><div dir=3D"ltr"><di=
+v class=3D"gmail_quote"><div><div>We should have the data about the range a=
+t bytecode compilation time, correct?=C2=A0 So why not keep it?=C2=A0 sure,=
+ most existing tooling would just use the start of the range as the line nu=
+mber as it always has.=C2=A0 but some tooling could find the range useful (=
+ex: semantic code indexing for use in display, search, editors, IDEs. Rende=
+ring lint errors more accurately instead of just claiming a single line or =
+resorting to parsing hacks to come up with a range, etc.).=C2=A0 The downsi=
+de is that we&#39;d be storing a second number in bytecode making it slight=
+ly larger.=C2=A0 Though it could be stored efficiently as a prefixed delta =
+so it&#39;d likely average out as less than 2 bytes per line number stored.=
+=C2=A0 (i don&#39;t have a feeling for our current format to know if that i=
+s significant or not - if it is, maybe this idea just gets nixed)</div><div=
+><br></div></div><div>The reason the range concept was on my mind is due to=
+ something not quite related but involving a changed idea of a line number =
+in our current system that we recently ran into with pytype during a Python=
+ upgrade.</div><div><br></div><div>&quot;&quot;&quot;in 3.7, if a function =
+body is a plain docstring, the line number of the RETURN_VALUE opcode corre=
+sponds to the docstring, whereas in 3.6 it corresponds to the function defi=
+nition.&quot;&quot;&quot; (Thanks, Martin &amp; Rebecca!)</div><div><br></d=
+iv><div>```python</div><div>def no_op():</div><div>=C2=A0 &quot;&quot;&quot=
+;docstring instead of pass.&quot;&quot;&quot;</div><div>```</div><div><br><=
+/div><div>so the location of what <i>was</i> originally an end of line `# p=
+ytype: disable=3Dbad-return-type` comment (to work around an issue not rele=
+vant here) turned awkward and version dependent.=C2=A0=C2=A0pytype is bytec=
+ode based, thus that is where its line numbers=C2=A0come from.=C2=A0 metada=
+ta comments in source can only be tied to bytecode via line numbers.=C2=A0 =
+making end of line directives occasionally hard to match up.</div><div><br>=
+</div><div>When there is no return statement, this opcode still exists.=C2=
+=A0 what line number does it belong to?=C2=A0 3.6&#39;s answer made sense t=
+o me.=C2=A0 3.7&#39;s seems wrong - a docstring isn&#39;t responsible for a=
+ return opcode.=C2=A0 I didn&#39;t check what 3.8 and 3.9 do.=C2=A0 An alte=
+rnate answer after this PEP is that it wouldn&#39;t have a line number when=
+ there is no return statement (pedantically correct, I approve! #win).</div=
+><div><br></div><div>-gps<br></div><div>=C2=A0</div><blockquote class=3D"gm=
+ail_quote" style=3D"margin:0px 0px 0px 0.8ex;border-left-width:1px;border-l=
+eft-style:solid;padding-left:1ex;border-left-color:rgb(204,204,204)">
+<br>
+Cheers,<br>
+Mark.<br>
+<br>
+&gt; <br>
+&gt; -gps<br>
+</blockquote></div></div>
+_______________________________________________<br>
+Python-Dev mailing list -- <a href=3D"mailto:python-dev@python.org" target=
+=3D"_blank">python-dev@python.org</a><br>
+To unsubscribe send an email to <a href=3D"mailto:python-dev-leave@python.o=
+rg" target=3D"_blank">python-dev-leave@python.org</a><br>
+<a href=3D"https://mail.python.org/mailman3/lists/python-dev.python.org/" r=
+el=3D"noreferrer" target=3D"_blank">https://mail.python.org/mailman3/lists/=
+python-dev.python.org/</a><br>
+Message archived at <a href=3D"https://mail.python.org/archives/list/python=
+-dev@python.org/message/H3YBK275SUSCR5EHWHYBTJBF655UK7JG/" rel=3D"noreferre=
+r" target=3D"_blank">https://mail.python.org/archives/list/python-dev@pytho=
+n.org/message/H3YBK275SUSCR5EHWHYBTJBF655UK7JG/</a><br>
+Code of Conduct: <a href=3D"http://python.org/psf/codeofconduct/" rel=3D"no=
+referrer" target=3D"_blank">http://python.org/psf/codeofconduct/</a><br>
+</blockquote></div></div>
+</div>-- <br><div dir=3D"ltr" class=3D"gmail_signature" data-smartmail=3D"g=
+mail_signature">--Guido (mobile)</div>
+
+--00000000000075ecc005ab119986--
+
+------------------------------
+
+Date: Thu, 23 Jul 2020 13:37:31 +0900
+From: Dong-hee Na <donghee.na92@gmail.com>
+Subject: [Python-Dev] Add mimetypes.mimesniff
+To: Python Dev <python-dev@python.org>
+Message-ID:
+	<CA+Z=B_m8wCYz1v=qeVgOe4m=+AMTtAnGChz2sn+-DsPMkxR24g@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+
+Hi,
+
+A few weeks ago, I suggested adding mimetypes.mimesniff on stdlib.
+(https://bugs.python.org/issue40841,
+https://github.com/python/cpython/pull/20720)
+
+Detecting MIME types well is an important feature and we already have
+mimetypes detection library but AFAIK it is not good enough.
+
+Note that some of our stdlib module already use the sniffing algorithm
+(e.g imghdr)
+
+The question is how exactly the mime sniffing should be done in terms
+of file formats and algorithm. Luckily, WHATWG published the standard
+for mime sniffing, and I think we should follow it.
+(https://mimesniff.spec.whatwg.org/)
+
+So I created the issue on the bpo and implemented it.
+I 'd like to listen to all your opinions :)
+
+-- 
+Software Development Engineer at Kakao corp.
+
+Tel: +82 10-3353-9127
+Email: donghee.na92@gmail.com | denny.i@kakaocorp.com
+Linkedin: https://www.linkedin.com/in/dong-hee-na-2b713b49/
+
+------------------------------
+
+Date: Thu, 23 Jul 2020 11:57:33 +0200
+From: Matthias Klose <doko@ubuntu.com>
+Subject: [Python-Dev] Re: How to customize CPython to a minimal set
+To: "Huang, Yang" <yang.huang@intel.com>,
+	"python-dev@python.org" <python-dev@python.org>
+Message-ID: <17099346-f1b4-5b85-8693-062b11d39ce2@ubuntu.com>
+Content-Type: text/plain; charset=utf-8
+
+On 7/20/20 10:30 AM, Huang, Yang wrote:
+> 
+> Hi, all
+> 
+> There is a request to run python in a Linux-based embedded resource constrained system with sqlite3 support.
+> 
+> So many features are not required, like posixmodule, signalmodule, hashtable ...
+> But seems there are some dependencies among the Modules/Parser/Python/Objects/Programs...
+> 
+> Is there a way to tailor CPython 3 to a minimal set with sqlite3 (the less syscalls the better) ? 
+> Is it possible to do that?
+
+CPython comes with the promise of all batteries included, however sometimes it
+feels like a complete power plant.  For packaging purposes, most Linux distros
+make the decision to ship CPython as a set of runtime packages, and a set of
+packages used for development (and building C extensions). Breaking that down
+for the Debian/Ubuntu packages comes down to these sizes (unpacked,
+uncompressed, on x86_64):
+
+minimal:
+5516K   debian/libpython3.9-minimal
+5856K   debian/python3.9-minimal
+
+stdlib:
+8528K   debian/libpython3.9-stdlib
+624K    debian/python3.9
+
+development:
+19468K  debian/libpython3.9-dev
+25804K  debian/libpython3.9-testsuite
+1232K   debian/python3-distutils
+668K    debian/python3-lib2to3
+548K    debian/python3.9-dev
+
+extra modules:
+1648K   debian/idle-python3.9
+5208K   debian/python3.9-examples
+
+132K    debian/python3-gdbm
+844K    debian/python3-tk
+
+What you don't see from the sizes, are the extra dependencies which add to the
+size, e.g. the X stack for tk, or readline/curses/crypto for stdlib.
+
+The "minimal" set may sound nice, however it's not used in practice, because the
+set is not well defined, and it's difficult to keep the minimal set as a
+self-contained set of stdlib modules, and the minimal usually keeps growing,
+never shrinks.
+
+It looks like this "minimal" set is even too much for your purposed, so you
+would have to scale down this set even further.
+
+Matthias
+
+------------------------------
+
+Subject: Digest Footer
+
+_______________________________________________
+Python-Dev mailing list -- python-dev@python.org
+To unsubscribe send an email to python-dev-leave@python.org
+https://mail.python.org/mailman3/lists/python-dev.python.org/
+
+
+------------------------------
+
+End of Python-Dev Digest, Vol 204, Issue 125
+********************************************
