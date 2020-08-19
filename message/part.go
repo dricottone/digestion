@@ -5,20 +5,28 @@ import (
 )
 
 type MessagePart struct {
-	Header      *MessagePartHeader
-	Content     []string
+	Header             *MessagePartHeader
+	Content            []string
 }
 
 func NewPart() *MessagePart {
 	return &MessagePart{NewPartHeader(), []string{""}}
 }
 
-func (m *MessagePart) evaluateContentType() int {
+func (m *MessagePart) evaluate_type() int {
 	return 0
 }
 
-func (m *MessagePart) evaluateContentEncoding() int {
-	return decoder.EvaluateEncoding(m.Header.ContentEncoding)
+func (m *MessagePart) evaluate_encoding() int {
+	switch decoder.DetermineEncoding(m.Header.ContentEncoding) {
+	case decoder.EncodedUTF8:
+		return 0
+	case decoder.EncodedBase64:
+		return 1
+	case decoder.EncodedQuotedPrintable:
+		return 1
+	default:
+		return 10
+	}
 }
-
 

@@ -18,6 +18,19 @@ const (
 	ParsingContent    = "ParsingContent"
 )
 
+func contains_nonempty(s1, s2 string) bool {
+	return s2 != "" && strings.Contains(s1, s2)
+}
+
+func first_submatch(r regexp.Regexp, s string) string {
+	matches := r.FindStringSubmatch(s)
+	if matches != nil {
+		return strings.Replace(matches[1], " ", "", -1)
+	} else {
+		return ""
+	}
+}
+
 func parse_stream(reader io.Reader) {
 	// Create scanner from reader
 	input := bufio.NewScanner(reader)
@@ -44,6 +57,7 @@ func parse_stream(reader io.Reader) {
 
 	parsing := ParsingPreHeader
 	current_message := message.NewMessage()
+	current_boundary := ""
 
 	for input.Scan() {
 		line := input.Text()
@@ -57,7 +71,7 @@ func parse_stream(reader io.Reader) {
 		} else if parsing == ParsingHeader {
 			if tline == "" {
 				parsing = ParsingContent
-				current_message.FindBoundary(re_multipart)
+				current_boundary = first_submatch(*re_multipart, current_message.Header.ContentType)
 			} else {
 				current_message.SetHeader(line)
 			}
@@ -72,7 +86,8 @@ func parse_stream(reader io.Reader) {
 				parsing = ParsingPreHeader
 				current_message.Dump()
 				current_message = message.NewMessage()
-			} else if current_message.MatchBoundary(tline) {
+				current_boundary = ""
+			} else if contains_nonempty(tline, current_boundary) {
 				parsing = ParsingPartHeader
 				current_message.AppendPart()
 			} else {
