@@ -39,7 +39,7 @@ func parse_stream(reader io.Reader, length int) {
 	input := bufio.NewScanner(reader)
 
 	// Compile regular expressions
-	re_message_break, err := regexp.Compile("^-+$")
+	re_message_break, err := regexp.Compile("^-{5,}$")
 	if err != nil {
 		fmt.Printf("internal error - %v\n", err)
 		os.Exit(1)

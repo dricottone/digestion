@@ -2,6 +2,7 @@ package message
 
 import (
 	"git.dominic-ricottone.com/digestion/decoder"
+	"git.dominic-ricottone.com/digestion/renderer"
 )
 
 type MessagePart struct {
@@ -14,7 +15,14 @@ func NewPart() *MessagePart {
 }
 
 func (m *MessagePart) evaluate_type() int {
-	return 0
+	switch renderer.DetermineFormatting(m.Header.ContentType) {
+	case renderer.FormattedTextPlain:
+		return 0
+	case renderer.FormattedTextHTML:
+		return 20
+	default:
+		return 30
+	}
 }
 
 func (m *MessagePart) evaluate_encoding() int {

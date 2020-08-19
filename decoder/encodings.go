@@ -12,12 +12,12 @@ const (
 )
 
 func DetermineEncoding(encoding string) string {
-	if strings.Contains(encoding, "base64") {
+	if strings.Contains(encoding, "utf-8") {
+		return EncodedUTF8
+	} else if strings.Contains(encoding, "base64") {
 		return EncodedBase64
 	} else if strings.Contains(encoding, "quoted-printable") {
 		return EncodedQuotedPrintable
-	} else if strings.Contains(encoding, "utf-8") {
-		return EncodedUTF8
 	} else {
 		return EncodedUnknown
 	}
