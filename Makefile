@@ -1,5 +1,5 @@
 clean:
-	rm -rf textwrap
+	rm -rf digestion
 
 build:
 	go build
