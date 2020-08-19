@@ -86,9 +86,9 @@ func (m *Message) format_content(length int) ([]string, error) {
 	return wrapped, nil
 }
 
-func (m *Message) Dump() {
+func (m *Message) Dump(length int) {
 	header := m.format_header()
-	content, err := m.format_content(80)
+	content, err := m.format_content(length)
 	if err != nil {
 		fmt.Printf("error: %s", err)
 	}
@@ -96,6 +96,6 @@ func (m *Message) Dump() {
 	for _, line := range append(header, content...) {
 		fmt.Printf("%s\n", line)
 	}
-	fmt.Printf("\n%s\n\n", strings.Repeat("-", 80))
+	fmt.Printf("%s\n\n", strings.Repeat("-", length))
 }
 

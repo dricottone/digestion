@@ -7,9 +7,12 @@ import (
 	"io"
 	"bufio"
 	"regexp"
+	"flag"
 
 	"git.dominic-ricottone.com/digestion/message"
 )
+
+const LINE_LENGTH = 80
 
 const (
 	ParsingPreHeader  = "ParsingPreHeader"
@@ -31,7 +34,7 @@ func first_submatch(r regexp.Regexp, s string) string {
 	}
 }
 
-func parse_stream(reader io.Reader) {
+func parse_stream(reader io.Reader, length int) {
 	// Create scanner from reader
 	input := bufio.NewScanner(reader)
 
@@ -55,7 +58,7 @@ func parse_stream(reader io.Reader) {
 		os.Exit(1)
 	}
 
-	parsing := ParsingPreHeader
+	parsing := ParsingContent
 	current_message := message.NewMessage()
 	current_boundary := ""
 
@@ -84,7 +87,7 @@ func parse_stream(reader io.Reader) {
 		} else if parsing == ParsingContent {
 			if re_message_break.MatchString(tline) {
 				parsing = ParsingPreHeader
-				current_message.Dump()
+				current_message.Dump(length)
 				current_message = message.NewMessage()
 				current_boundary = ""
 			} else if contains_nonempty(tline, current_boundary) {
@@ -103,7 +106,7 @@ func parse_stream(reader io.Reader) {
 	}
 }
 
-func parse_file(filename string) {
+func parse_file(filename string, length int) {
 	// Check file
 	file, err := os.Open(filename)
 	if err != nil {
@@ -113,7 +116,7 @@ func parse_file(filename string) {
 	defer file.Close()
 
 	// Parse
-	parse_stream(file)
+	parse_stream(file, length)
 }
 
 func main() {
@@ -124,7 +127,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Look for arguments
+	var length = flag.Int("length", LINE_LENGTH, "maximum length of lines")
+	flag.Parse()
+
 	// Parse
-	parse_stream(os.Stdin)
+	parse_stream(os.Stdin, *length)
 }
 
