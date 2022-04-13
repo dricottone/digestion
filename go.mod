@@ -1,5 +1,5 @@
 module git.dominic-ricottone.com/digestion
 
-go 1.15
+go 1.18
 
 require git.dominic-ricottone.com/textwrap v0.0.2
