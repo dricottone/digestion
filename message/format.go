@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	textwrap "git.dominic-ricottone.com/textwrap/common"
+	textwrap "git.dominic-ricottone.com/~dricottone/textwrap/common"
 
-	"git.dominic-ricottone.com/digestion/decoder"
+	"git.dominic-ricottone.com/~dricottone/digestion/decoder"
 )
 
 func (m *Message) determine_best_part() int {

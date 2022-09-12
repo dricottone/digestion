@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"flag"
 
-	"git.dominic-ricottone.com/digestion/message"
+	"git.dominic-ricottone.com/~dricottone/digestion/message"
 )
 
 const LINE_LENGTH = 80

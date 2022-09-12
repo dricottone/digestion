@@ -1,5 +1,5 @@
-module git.dominic-ricottone.com/digestion
+module git.dominic-ricottone.com/~dricottone/digestion
 
-go 1.18
+go 1.19
 
-require git.dominic-ricottone.com/textwrap v0.0.2
+require git.dominic-ricottone.com/~dricottone/textwrap v0.0.3
