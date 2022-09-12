@@ -1,5 +1,4 @@
-SHARE_DIR?=/usr/local/share
-INSTALL_DIR?=$(SHARE_DIR)/mail-filters
+INSTALL_DIR?=/usr/local/bin
 GO_FILES=$(shell find -name '*.go')
 
 .PHONY: clean
@@ -15,6 +14,5 @@ build: digestion
 
 .PHONY: install
 install: digestion
-	mkdir -m755 -p $(INSTALL_DIR)
 	install -m755 digestion $(INSTALL_DIR)/digestion
 
