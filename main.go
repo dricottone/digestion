@@ -10,6 +10,7 @@ import (
 	"flag"
 
 	"git.dominic-ricottone.com/~dricottone/digestion/message"
+	parcels "git.dominic-ricottone.com/~dricottone/parcels/common"
 )
 
 const LINE_LENGTH = 80
@@ -35,8 +36,15 @@ func first_submatch(r regexp.Regexp, s string) string {
 }
 
 func parse_stream(reader io.Reader, length int) {
-	// Create scanner from reader
-	input := bufio.NewScanner(reader)
+	fmt.Println("ping")
+	content, urls, err := parcels.ParseFromReader(reader, 0)
+	if err != nil {
+		fmt.Printf("internal error - %v\n", err)
+		os.Exit(1)
+	}
+
+	// create scanner
+	input := bufio.NewScanner(strings.NewReader(content))
 
 	// Compile regular expressions
 	re_message_break, err := regexp.Compile("^-{5,}$")
@@ -98,6 +106,8 @@ func parse_stream(reader io.Reader, length int) {
 			}
 		}
 	}
+
+	fmt.Printf("%s", urls)
 
 	// Check for scanner errors
 	if err = input.Err(); err != nil {
