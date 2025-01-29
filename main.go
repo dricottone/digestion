@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"flag"
 
-	"git.dominic-ricottone.com/~dricottone/digestion/message"
-	parcels "git.dominic-ricottone.com/~dricottone/parcels/common"
+	"git.sr.ht/~dricottone/digestion/message"
+	parcels "git.sr.ht/~dricottone/parcels/common"
 )
 
 const LINE_LENGTH = 80
@@ -36,7 +36,6 @@ func first_submatch(r regexp.Regexp, s string) string {
 }
 
 func parse_stream(reader io.Reader, length int) {
-	fmt.Println("ping")
 	content, urls, err := parcels.ParseFromReader(reader, 0)
 	if err != nil {
 		fmt.Printf("internal error - %v\n", err)
