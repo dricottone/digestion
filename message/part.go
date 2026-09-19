@@ -1,8 +1,8 @@
 package message
 
 import (
-	"git.sr.ht/~dricottone/digestion/decoder"
-	"git.sr.ht/~dricottone/digestion/renderer"
+	"tangled.org/dominic-ricottone.com/digestion/decoder"
+	"tangled.org/dominic-ricottone.com/digestion/renderer"
 )
 
 type MessagePart struct {

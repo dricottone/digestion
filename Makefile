@@ -5,9 +5,9 @@ clean:
 	rm -f digestion go.mod go.sum
 
 go.mod:
-	go mod init git.sr.ht/~dricottone/digestion
-	go get git.sr.ht/~dricottone/parcels
-	go get git.sr.ht/~dricottone/textwrap
+	go mod init tangled.org/dominic-ricottone.com/digestion
+	go get tangled.org/dominic-ricottone.com/parcels
+	go get tangled.org/dominic-ricottone.com/textwrap
 
 digestion: $(SRC)
 	go get -u

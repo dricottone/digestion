@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"flag"
 
-	"git.sr.ht/~dricottone/digestion/message"
-	parcels "git.sr.ht/~dricottone/parcels/common"
+	"tangled.org/dominic-ricottone.com/digestion/message"
+	parcels "tangled.org/dominic-ricottone.com/parcels/common"
 )
 
 const LINE_LENGTH = 80
